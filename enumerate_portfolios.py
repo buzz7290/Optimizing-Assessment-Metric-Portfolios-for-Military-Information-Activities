@@ -147,24 +147,32 @@ def best_for_weights(w):
 best = best_for_weights(base_w)
 base_obj, _, baseS = best
 
-# Coverage-only baseline: at least one metric for every node, no source/type requirement,
-# no pairwise penalty; minimizes individual generalized cost.
-def individual_cost(S, w=base_w):
-    c=coeffs(S)
-    return sum(c[p]*w[p] for p in ['wc','wu','wl','wv'])
+# Controlled comparison 1: relax the evidentiary requirements while retaining
+# the same full objective, including the pairwise-overlap penalty.
+def relaxed_feasible(S):
+    S=set(S)
+    return all(any(n in coverage[i] for i in S) for n in node_keys)
 
-coverage_only=[]
+relaxed_sets=[]
 for bits in itertools.product([0,1], repeat=len(M)):
     S=tuple(i for i,b in zip(M,bits) if b)
-    if all(any(n in coverage[i] for i in S) for n in node_keys):
-        coverage_only.append((individual_cost(S),len(S),S))
-coverage_only.sort()
-coverage_baseline=coverage_only[0]
+    if relaxed_feasible(S):
+        relaxed_sets.append(S)
+relaxed_baseline=min((objective(S),len(S),S) for S in relaxed_sets)
+
+# Controlled comparison 2: retain the full evidentiary requirements but
+# remove the pairwise-overlap penalty by setting wR=0.
+no_overlap_w=dict(base_w)
+no_overlap_w['wR']=0.0
+no_overlap_best=best_for_weights(no_overlap_w)
 
 # Print numerical summary for manuscript cross-checking.
 print('Feasible full-model portfolios:', len(feasible_sets))
 print('Base optimum:', baseS, 'F=', round(base_obj,3), 'coeffs=', co[baseS])
-print('Coverage-only baseline:', coverage_baseline)
+print('Relaxed-requirements optimum:', relaxed_baseline)
+print('No-overlap-penalty optimum:', no_overlap_best)
+print('No-overlap portfolio under base objective:',
+      round(objective(no_overlap_best[2], base_w),3))
 print('Top five full-model portfolios:')
 for val,_,S in sorted((objective(S),len(S),S) for S in feasible_sets)[:5]:
     c=co[S]
