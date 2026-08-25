@@ -8,7 +8,7 @@ The script enumerates all possible portfolios of 15 candidate assessment metrics
 
 ```text
 .
-├── reproduce_iwanttolive_case.py
+├── enumerate_portfolios.py
 ├── README.md
 └── figures/                         # created automatically when the script runs
 ```
